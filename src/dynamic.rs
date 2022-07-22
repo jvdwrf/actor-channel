@@ -1,14 +1,13 @@
-use crate::{Capacity, Channel, Exit};
-use std::any::Any;
+use std::{any::Any, sync::Arc};
+
+use crate::*;
 
 /// A [Channel], with a it's message type-erased.
-pub trait AnyChannel {
+pub trait AnyChannel: Haltable {
     /// See [Channel::close]
     fn close(&self) -> bool;
     /// See [Channel::closed]
     fn closed(&self) -> bool;
-    /// See [Channel::halt]
-    fn halt(&self, n: u32);
     /// See [Channel::capacity]
     fn capacity(&self) -> &Capacity;
     /// See [Channel::should_halt]
@@ -38,6 +37,8 @@ pub trait AnyChannel {
     fn exit(&self) -> Exit<'_>;
     /// See [Channel::exit_blocking]
     fn exit_blocking(&self);
+
+    fn into_any(self: Arc<Self>) -> Arc<dyn Any + Send + Sync>;
 }
 
 impl<M: Send + 'static> AnyChannel for Channel<M> {
@@ -46,9 +47,6 @@ impl<M: Send + 'static> AnyChannel for Channel<M> {
     }
     fn closed(&self) -> bool {
         self.closed()
-    }
-    fn halt(&self, n: u32) {
-        self.halt(n)
     }
     fn capacity(&self) -> &Capacity {
         self.capacity()
@@ -88,5 +86,19 @@ impl<M: Send + 'static> AnyChannel for Channel<M> {
     }
     fn exit_blocking(&self) {
         self.exit_blocking()
+    }
+    fn into_any(self: Arc<Self>) -> Arc<dyn Any + Send + Sync> {
+        self
+    }
+}
+
+
+pub trait Haltable {
+    fn halt(&self, n: u32);
+}
+
+impl<M: Send + 'static> Haltable for Channel<M> {
+    fn halt(&self, n: u32) {
+        self.halt(n)
     }
 }

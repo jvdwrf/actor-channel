@@ -1,5 +1,8 @@
 use std::time::Duration;
 
+/// The capacity of a given channel.
+/// 
+/// This can either be bounded or unbounded.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Capacity {
     Bounded(usize),
@@ -12,6 +15,10 @@ impl Default for Capacity {
     }
 }
 
+/// If a channel is bounded, then it has a backpressure mechanism.
+/// 
+/// This backpressure will make sending processes wait for a longer duration, the
+/// longer the queue is.
 #[derive(Clone, Debug, PartialEq)]
 pub struct BackPressure {
     pub start_at: usize,
@@ -39,6 +46,7 @@ impl BackPressure {
         }
     }
 
+    /// Get the timeout for a given message-count.
     pub fn get_timeout(&self, msg_count: usize) -> Option<Duration> {
         if msg_count >= self.start_at {
             match self.growth {
